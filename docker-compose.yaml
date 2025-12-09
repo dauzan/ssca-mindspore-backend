@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: carbon-backend
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=development
+      - PYTHONUNBUFFERED=1
+      - MINDSPORE_DEVICE_TARGET=CPU
+      - OMP_NUM_THREADS=2
+      - MKL_NUM_THREADS=2
+    volumes:
+      # Mount data directory for persistence
+      - ./data:/app/data
+      # Mount code for hot-reload during development (comment out for production)
+      - ./app.py:/app/app.py
+      - ./models:/app/models
+      - ./utils:/app/utils
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - backend-network
+
+networks:
+  backend-network:
+    driver: bridge
